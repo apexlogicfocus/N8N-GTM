@@ -1,0 +1,1681 @@
+{
+  "nodes": [
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "or",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.result }}",
+              "rightValue": "valid",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $json.result === \"catchall\" && $json.confidence >= 85 }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "948246b9-02ff-4fff-b5e9-5278e6f8f25f",
+      "name": "Keep Only Valid Emails",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        316
+      ]
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": {
+          "category": "interested",
+          "reason": "Wants to book a call"
+        }
+      },
+      "id": "04152485-d6ca-4b54-83d3-db11434953e1",
+      "name": "Reply Classifier Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        -1976,
+        924
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "action",
+              "value": "sequence_snoozed",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "reason",
+              "value": "not_now",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "snooze_until",
+              "value": "={{ $now.plus({ days: 30 }).toISO() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "8a566feb-0161-4021-87bf-8d5e92769111",
+      "name": "Snooze Sequence - Not Now",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1472,
+        944
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "action",
+              "value": "sequence_stopped",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "reason",
+              "value": "not_interested",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "b87f3243-7715-4c55-821b-304dc1b96e02",
+      "name": "Stop Sequence - Not Interested",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1472,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#general",
+          "mode": "name"
+        },
+        "text": "=🎉 Positive Reply Detected!\n\nFrom: {{ $json.from }}\nSubject: {{ $json.subject }}\n\nMessage: {{ $json.text }}\n\nClassification: {{ $json.output.category }}\nReason: {{ $json.output.reason }}",
+        "otherOptions": {}
+      },
+      "id": "ae07016d-4eeb-49bc-8707-558dae2fa8bb",
+      "name": "Notify Team - Interested Lead",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        -1472,
+        560
+      ],
+      "webhookId": "019bbffe-52ed-4702-b41c-4c43d00d0c3e",
+      "credentials": {
+        "slackApi": {
+          "id": "5I6INEGm0oXvDxNw",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.category.toLowerCase() }}",
+                    "rightValue": "interested",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "interested"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.category.toLowerCase() }}",
+                    "rightValue": "not_interested",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "not_interested"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.output.category.toLowerCase() }}",
+                    "rightValue": "not_now",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "not_now"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "eb3a1d72-83e3-4db8-a7af-3516b92030e1",
+      "name": "Route by Reply Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -1696,
+        684
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Classify this email reply into one of three categories:\n\nEmail: {{ $json.text }}\n\nCategories:\n- interested: Positive response, wants to learn more, book a call, or engage\n- not_interested: Clear rejection, not a fit, or unsubscribe request\n- not_now: Busy, maybe later, timing is not right\n\nReturn JSON with category and reason.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an email sentiment classifier. Categorize replies accurately based on intent."
+        }
+      },
+      "id": "a47cff35-c074-4cfd-ad73-b0f95fe312b3",
+      "name": "AI Reply Classifier",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -2048,
+        700
+      ]
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "from:@acme.com OR subject:\"Re:\"__>",
+          "readStatus": "unread"
+        },
+        "options": {}
+      },
+      "id": "4a450117-584a-4d88-8e1d-b67dbb07b457",
+      "name": "Monitor Gmail Replies",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -2272,
+        700
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0uKUAfsdSAGsbBjW",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "status",
+              "value": "skipped_low_quality",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "3ed6bc51-8087-449c-801d-8903f5926309",
+      "name": "Skip Low Quality Leads",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1696,
+        412
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=Re: {{ $json.output.subject }}",
+        "message": "=Hi {{ $json.first_name }},\n\nI understand you might be busy. If this is not a priority right now, no worries at all.\n\nFeel free to reach out when the timing is better.\n\nBest,\nYour Name",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "c2e9dd42-0826-4c11-9548-ece5d96aa404",
+      "name": "Send Follow-Up 3 (Day 7)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3264,
+        220
+      ],
+      "webhookId": "ce4deea0-b05d-4445-8ce1-44306697de32",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0uKUAfsdSAGsbBjW",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 3,
+        "unit": "days"
+      },
+      "id": "4e6dc1ed-85f1-4793-9148-a04f2a8d5870",
+      "name": "Wait 3 More Days (Day 7)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        3040,
+        220
+      ],
+      "webhookId": "67871409-9bde-4620-b645-ca485ea03d8b"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=Re: {{ $json.output.subject }}",
+        "message": "=Hi {{ $json.first_name }},\n\nLast follow-up from me. We recently helped a company similar to {{ $json.company }} book 30+ meetings in their first month.\n\nInterested in learning how?\n\nBest,\nYour Name",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "ef4c60a3-1b76-4496-8a35-23735f2500d4",
+      "name": "Send Follow-Up 2 (Day 4)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2816,
+        220
+      ],
+      "webhookId": "4d6f4191-3d56-4521-8bea-859ae5400367",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0uKUAfsdSAGsbBjW",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "days"
+      },
+      "id": "edbd39c9-c777-4882-bf05-e2da74892116",
+      "name": "Wait 2 More Days (Day 4)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2592,
+        220
+      ],
+      "webhookId": "7c730344-064b-4d84-a8bc-9f966be935c4"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "=Re: {{ $json.output.subject }}",
+        "message": "=Hi {{ $json.first_name }},\n\nJust following up on my previous email. Would love to chat about how we can help {{ $json.company }} scale outbound.\n\nBest,\nYour Name",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "7de45ee4-77ac-4249-9ebc-5fc9fed866a6",
+      "name": "Send Follow-Up 1 (Day 2)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2368,
+        220
+      ],
+      "webhookId": "dbfcae7c-29fd-4826-abf5-8500a854dfb1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0uKUAfsdSAGsbBjW",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": 2,
+        "unit": "days"
+      },
+      "id": "495051b6-7cf7-4419-985a-2eefaba871cd",
+      "name": "Wait 2 Days",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2144,
+        220
+      ],
+      "webhookId": "d1bc9145-6fbf-47a7-ab45-97df7dd4b9f2"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#my-stuff",
+          "mode": "name"
+        },
+        "text": "=🔥 High Quality Lead Processed!\n\nName: {{ $json.first_name }} {{ $json.last_name }}\nCompany: {{ $json.company }}\nEmail: {{ $json.email }}\nScore: {{ $json.lead_score }} ({{ $json.confidence }}%)\nSource: {{ $json.source }}\n\nEmail sent successfully!",
+        "otherOptions": {}
+      },
+      "id": "edd867a6-3447-4d59-9adc-96c5c5851193",
+      "name": "Notify Team - High Quality Lead",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1920,
+        220
+      ],
+      "executeOnce": true,
+      "webhookId": "92a5cc64-b3d8-41ec-8a11-28bcf2fdd86e",
+      "credentials": {
+        "slackApi": {
+          "id": "5I6INEGm0oXvDxNw",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.email }}",
+        "subject": "={{ $json.output.subject }}",
+        "message": "={{ $json.output.body }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "81b601f5-71fe-4021-bcfb-a19511123d51",
+      "name": "Send Initial Outreach Email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1696,
+        220
+      ],
+      "webhookId": "90f2ba26-92b8-4650-9159-cc4ba98e2ecc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "0uKUAfsdSAGsbBjW",
+          "name": "Gmail account 3"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "or",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.lead_score }}",
+              "rightValue": "high",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "leftValue": "={{ $json.lead_score }}",
+              "rightValue": "medium",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e57306df-d794-4c36-be3e-3e9f1c1c0e98",
+      "name": "Is Lead Medium or High Quality?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1472,
+        316
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1VnUVrUaLURlpOuQpuisxGO5Et2kSSlU6IO6Sp88R6gc/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "387dbd9a-6a8c-46bc-9444-65560983b40a",
+      "name": "Save to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1248,
+        316
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "CDiAvJXxOzhZ3YDZ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": {
+          "subject": "Quick question about outbound",
+          "first_line": "I noticed your team at Acme Corp...",
+          "body": "Full email body here..."
+        }
+      },
+      "id": "9fc152c9-a3bd-4d92-8d17-d4126e676c97",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        968,
+        540
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate a personalized cold email for {{ $json.full_name }} at {{ $json.company }}.\n\nRequirements:\n- Subject line (max 50 chars)\n- Personalized first line (1 sentence)\n- Full email body (max 120 words)\n- Tone: human, concise, non-spammy\n- Focus on value proposition for B2B outbound agency services\n\nReturn as JSON with keys: subject, first_line, body",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert B2B cold email copywriter. Generate personalized, high-converting outreach emails."
+        }
+      },
+      "id": "676859f3-1409-4d73-a106-15cc0abbd971",
+      "name": "AI Email Personalization",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        896,
+        316
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "lead_score",
+              "value": "={{ $json.confidence >= 85 ? \"high\" : $json.confidence >= 70 ? \"medium\" : \"low\" }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "score_value",
+              "value": "={{ $json.confidence }}",
+              "type": "number"
+            },
+            {
+              "id": "3",
+              "name": "validation_result",
+              "value": "={{ $json.result }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "15dae388-4f7d-4ede-8b14-ce471f93bd18",
+      "name": "Score Lead Quality",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        672,
+        316
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.neverbounce.com/v4/single/check",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "email",
+              "value": "={{ $json.email }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "348895ad-6976-4df7-935c-927119467179",
+      "name": "NeverBounce Email Validation",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        224,
+        316
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "RkV485YNGXnGpZln",
+          "name": "Query Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "email",
+              "value": "={{ $json.output.trim().toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "confidence",
+              "value": 50,
+              "type": "number"
+            },
+            {
+              "id": "3",
+              "name": "source",
+              "value": "ai_generated",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "first_name",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "last_name",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.last_name }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "company",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.company }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "domain",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.domain }}",
+              "type": "string"
+            },
+            {
+              "id": "8",
+              "name": "linkedin_url",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "9",
+              "name": "full_name",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.full_name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ce79a615-5930-4f2f-86de-905d0fd99372",
+      "name": "Format AI Generated Email",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        632
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "temperature": 0.3
+        }
+      },
+      "id": "2017dc20-4c60-45cf-8bd4-a5bcf8292613",
+      "name": "OpenAI Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -280,
+        856
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "2U0aMt2tBkKGVtnf",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate the most likely email address for {{ $(\"Normalize Lead Data\").item.json.full_name }} at {{ $(\"Normalize Lead Data\").item.json.domain }}. Common patterns: firstname.lastname@domain, firstnamelastname@domain, first.last@domain, flastname@domain. Return ONLY the email address, nothing else.",
+        "options": {
+          "systemMessage": "You are an email pattern generator. Output only the email address, no explanations."
+        }
+      },
+      "id": "0950c01f-abee-415f-9a9f-2471cf2a293d",
+      "name": "AI Email Pattern Generator",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -352,
+        632
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "email",
+              "value": "={{ $json.data?.[0]?.email }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "confidence",
+              "value": 80,
+              "type": "number"
+            },
+            {
+              "id": "3",
+              "name": "source",
+              "value": "dropcontact",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "first_name",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "last_name",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.last_name }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "company",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.company }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "domain",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.domain }}",
+              "type": "string"
+            },
+            {
+              "id": "8",
+              "name": "linkedin_url",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "9",
+              "name": "full_name",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.full_name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "abbadcd0-896c-45e9-8b65-bdda0fa23c48",
+      "name": "Normalize Dropcontact Email",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.data?.[0]?.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aabc1a59-532a-408e-a99b-9534387ac743",
+      "name": "Dropcontact Found Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -576,
+        508
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dropcontact.io/batch",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"data\": [{ \"first_name\": $(\"Normalize Lead Data\").item.json.first_name, \"last_name\": $(\"Normalize Lead Data\").item.json.last_name, \"website\": $(\"Normalize Lead Data\").item.json.domain }] } }}",
+        "options": {}
+      },
+      "id": "11772cc7-490b-4d8d-9a98-d9fe0f4048b4",
+      "name": "Dropcontact Email Finder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -800,
+        508
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "AVNOWUMRB74ycFq6",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "email",
+              "value": "={{ $json.data.email }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "confidence",
+              "value": "={{ $json.data.score || 85 }}",
+              "type": "number"
+            },
+            {
+              "id": "3",
+              "name": "source",
+              "value": "hunter",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "first_name",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "last_name",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.last_name }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "company",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.company }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "domain",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.domain }}",
+              "type": "string"
+            },
+            {
+              "id": "8",
+              "name": "linkedin_url",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "9",
+              "name": "full_name",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.full_name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "de14ae64-8bff-48e7-9a74-d4ff19be67d9",
+      "name": "Normalize Hunter Email",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.data?.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b64a7730-0b8e-4459-8060-a49ef1f33f90",
+      "name": "Hunter Found Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1024,
+        412
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.hunter.io/v2/email-finder",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "first_name",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.first_name }}"
+            },
+            {
+              "name": "last_name",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.last_name }}"
+            },
+            {
+              "name": "domain",
+              "value": "={{ $(\"Normalize Lead Data\").item.json.domain }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "cfffa81b-7e3a-4939-b82c-568d598e9e71",
+      "name": "Hunter.io Email Finder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1248,
+        412
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpQueryAuth": {
+          "id": "RkV485YNGXnGpZln",
+          "name": "Query Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "confidence",
+              "value": "={{ $json.confidence || 90 }}",
+              "type": "number"
+            },
+            {
+              "id": "3",
+              "name": "source",
+              "value": "prospeo",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "first_name",
+              "value": "={{ $input.first().json.first_name }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "last_name",
+              "value": "={{ $input.first().json.last_name }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "company",
+              "value": "={{ $input.first().json.company }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "domain",
+              "value": "={{ $input.first().json.domain }}",
+              "type": "string"
+            },
+            {
+              "id": "8",
+              "name": "linkedin_url",
+              "value": "={{ $input.first().json.linkedin_url }}",
+              "type": "string"
+            },
+            {
+              "id": "9",
+              "name": "full_name",
+              "value": "={{ $input.first().json.full_name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c361dc6a-0255-4ad3-ad66-34cf47d19f72",
+      "name": "Normalize Prospeo Email",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2d710e2c-5a58-42ac-9616-c3e9632d51fc",
+      "name": "Prospeo Found Email?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -1472,
+        316
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.prospeo.io/email-finder",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "first_name",
+              "value": "={{ $json.first_name }}"
+            },
+            {
+              "name": "last_name",
+              "value": "={{ $json.last_name }}"
+            },
+            {
+              "name": "domain",
+              "value": "={{ $json.domain }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "543824f5-5f00-42fb-973e-5672e0e1f8ca",
+      "name": "Prospeo Email Finder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -1696,
+        316
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "AVNOWUMRB74ycFq6",
+          "name": "Header Auth account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "first_name",
+              "value": "={{ $json.body.first_name?.trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "last_name",
+              "value": "={{ $json.body.last_name?.trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "company",
+              "value": "={{ $json.body.company?.trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "domain",
+              "value": "={{ $json.body.domain?.trim().toLowerCase() }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "linkedin_url",
+              "value": "={{ $json.body.linkedin_url?.trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "full_name",
+              "value": "={{ $json.body.first_name?.trim() }} {{ $json.body.last_name?.trim() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "854ef6f2-48bc-4e2c-b844-aaf257f196c5",
+      "name": "Normalize Lead Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1984,
+        316
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "lead-intake",
+        "options": {}
+      },
+      "id": "8588886e-58de-44ed-945d-470838bf260a",
+      "name": "Lead Input Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -2272,
+        316
+      ],
+      "webhookId": "4c1e6cee-716f-4a36-b688-8444020bedf0"
+    }
+  ],
+  "connections": {
+    "Keep Only Valid Emails": {
+      "main": [
+        [
+          {
+            "node": "Score Lead Quality",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Classifier Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Reply Classifier",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Reply Type": {
+      "main": [
+        [
+          {
+            "node": "Notify Team - Interested Lead",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop Sequence - Not Interested",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Snooze Sequence - Not Now",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Reply Classifier": {
+      "main": [
+        [
+          {
+            "node": "Route by Reply Type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Monitor Gmail Replies": {
+      "main": [
+        [
+          {
+            "node": "AI Reply Classifier",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 3 More Days (Day 7)": {
+      "main": [
+        [
+          {
+            "node": "Send Follow-Up 3 (Day 7)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Follow-Up 2 (Day 4)": {
+      "main": [
+        [
+          {
+            "node": "Wait 3 More Days (Day 7)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2 More Days (Day 4)": {
+      "main": [
+        [
+          {
+            "node": "Send Follow-Up 2 (Day 4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Follow-Up 1 (Day 2)": {
+      "main": [
+        [
+          {
+            "node": "Wait 2 More Days (Day 4)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 2 Days": {
+      "main": [
+        [
+          {
+            "node": "Send Follow-Up 1 (Day 2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Notify Team - High Quality Lead": {
+      "main": [
+        [
+          {
+            "node": "Wait 2 Days",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Initial Outreach Email": {
+      "main": [
+        [
+          {
+            "node": "Notify Team - High Quality Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Lead Medium or High Quality?": {
+      "main": [
+        [
+          {
+            "node": "Send Initial Outreach Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Skip Low Quality Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Is Lead Medium or High Quality?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Email Personalization",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Email Personalization": {
+      "main": [
+        [
+          {
+            "node": "Save to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Score Lead Quality": {
+      "main": [
+        [
+          {
+            "node": "AI Email Personalization",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NeverBounce Email Validation": {
+      "main": [
+        [
+          {
+            "node": "Keep Only Valid Emails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format AI Generated Email": {
+      "main": [
+        [
+          {
+            "node": "NeverBounce Email Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Reply Classifier",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Email Personalization",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Email Pattern Generator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Email Pattern Generator": {
+      "main": [
+        [
+          {
+            "node": "Format AI Generated Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Dropcontact Email": {
+      "main": [
+        [
+          {
+            "node": "NeverBounce Email Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dropcontact Found Email?": {
+      "main": [
+        [
+          {
+            "node": "Normalize Dropcontact Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AI Email Pattern Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dropcontact Email Finder": {
+      "main": [
+        [
+          {
+            "node": "Dropcontact Found Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Hunter Email": {
+      "main": [
+        [
+          {
+            "node": "NeverBounce Email Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hunter Found Email?": {
+      "main": [
+        [
+          {
+            "node": "Normalize Hunter Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Dropcontact Email Finder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hunter.io Email Finder": {
+      "main": [
+        [
+          {
+            "node": "Hunter Found Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Prospeo Email": {
+      "main": [
+        [
+          {
+            "node": "NeverBounce Email Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospeo Found Email?": {
+      "main": [
+        [
+          {
+            "node": "Normalize Prospeo Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Hunter.io Email Finder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prospeo Email Finder": {
+      "main": [
+        [
+          {
+            "node": "Prospeo Found Email?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Lead Data": {
+      "main": [
+        [
+          {
+            "node": "Prospeo Email Finder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Input Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Lead Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fd5d296b1d5dc67448ebfd03a5b2f94409cfdc03be902c645243b3db4e58157c"
+  }
+}
